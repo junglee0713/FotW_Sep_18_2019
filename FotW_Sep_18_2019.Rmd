@@ -1,0 +1,75 @@
+---
+title: "Function of the Week -- `gt::gt()`"
+author: "PennCHOP Microbiome Program"
+date: "9/18/2019"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r, include = FALSE, echo = FALSE}
+library(knitr)
+opts_chunk$set(
+  tidy = FALSE,
+  cache = FALSE,
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  dpi = 100,
+  fig.align = "center"
+  )
+library(tidyverse)
+```
+
+```{r}
+#remotes::install_github("rstudio/gt")
+library(gt)
+```
+
+# Raw data
+
+```{r}
+d0 <- read_tsv("genus_prop.tsv")
+dim(d0)
+d <- d0 %>%
+  mutate(Taxa = fct_relevel(Taxa, "Other", after = Inf)) %>%
+  mutate(Phylum = case_when(str_detect(Taxa, "Bacteroidetes") ~ "Bacteroidetes",
+                            str_detect(Taxa, "Firmicutes") ~ "Firmicutes",
+                            T ~ "Other phyla")) %>%
+  arrange(Phylum, Taxa) %>%
+  select(Taxa, Phylum, everything())
+```
+
+# Final table
+
+```{r}
+d %>%
+  gt(rowname_col = "Taxa") %>%
+  tab_stubhead(label = "Taxonomy") %>%
+  cols_hide(columns = "Phylum") %>%
+  fmt_percent(columns = contains("DSS")) %>%
+  tab_header(title = "Abundance table",
+             subtitle = "Genus-level") %>%
+  tab_source_note(source_note = "Data from Habtezion project") %>%
+  tab_source_note(source_note = md("*E. coli* not found")) %>% 
+  tab_spanner(label = "LCA DSS", 
+              columns = starts_with("LCA.DSS")) %>%
+  tab_spanner(label = "NO DSS", 
+              columns = starts_with("NO.DSS")) %>%
+  tab_spanner(label = "Water", 
+              columns = starts_with("Water")) %>%
+  tab_row_group(group = "Bacteroidetes",
+                rows = Phylum == "Bacteroidetes") %>%
+  tab_row_group(group = "Firmicutes",
+                rows = Phylum == "Firmicutes") %>%
+  tab_row_group(group = "Other phyla",
+                rows = Phylum == "Other phyla") %>%
+  tab_footnote(footnote = md("**Not observed!**"),
+               locations = cells_data(
+                 columns = contains("No.DSS"),
+                 rows = contains("p__Proteobacteria g__Proteus"))
+               ) %>%
+  gtsave("table_final.pdf")
+```
+
