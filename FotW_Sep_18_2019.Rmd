@@ -23,6 +23,7 @@ library(tidyverse)
 ```
 
 ```{r}
+#Install and load the package
 #remotes::install_github("rstudio/gt")
 library(gt)
 ```
@@ -32,6 +33,8 @@ library(gt)
 ```{r}
 d0 <- read_tsv("genus_prop.tsv")
 dim(d0)
+#View(d0)
+
 d <- d0 %>%
   mutate(Taxa = fct_relevel(Taxa, "Other", after = Inf)) %>%
   mutate(Phylum = case_when(str_detect(Taxa, "Bacteroidetes") ~ "Bacteroidetes",
@@ -39,37 +42,140 @@ d <- d0 %>%
                             T ~ "Other phyla")) %>%
   arrange(Phylum, Taxa) %>%
   select(Taxa, Phylum, everything())
+#View(d)
 ```
 
-# Final table
+# Initial table
 
 ```{r}
-d %>%
-  gt(rowname_col = "Taxa") %>%
-  tab_stubhead(label = "Taxonomy") %>%
-  cols_hide(columns = "Phylum") %>%
-  fmt_percent(columns = contains("DSS")) %>%
+d1 <- d %>%
+  gt(rowname_col = "Taxa") 
+
+gtsave(d1, "initial.pdf")
+```
+
+\newpage
+
+# Stub head (header for rowname)
+
+```{r}
+d2 <- d1 %>%
+  tab_stubhead(label = "Taxonomy") 
+
+gtsave(d2, "stub_head.pdf")
+```
+
+# Hide columns
+
+```{r}
+d3 <- d2 %>%
+  cols_hide(columns = "Phylum") 
+
+gtsave(d3, "hide_cols.pdf")
+```
+
+\newpage
+
+# Format columns
+
+```{r}
+d4 <- d3 %>%
+  fmt_percent(columns = contains("DSS")) 
+
+gtsave(d4, "format_cols.pdf")
+```
+
+# Add titles
+
+```{r}
+d5 <- d4 %>%
   tab_header(title = "Abundance table",
-             subtitle = "Genus-level") %>%
+             subtitle = "Genus-level")
+
+gtsave(d5, "add_titles.pdf")
+```
+
+\newpage
+
+# Add source notes
+
+```{r}
+d6 <- d5 %>%
   tab_source_note(source_note = "Data from Habtezion project") %>%
-  tab_source_note(source_note = md("*E. coli* not found")) %>% 
+  tab_source_note(source_note = md("*E. coli* not found"))
+
+gtsave(d6, "add_source.pdf")
+```
+
+# Add column spanners
+
+```{r}
+d7 <- d6 %>%
   tab_spanner(label = "LCA DSS", 
               columns = starts_with("LCA.DSS")) %>%
   tab_spanner(label = "NO DSS", 
               columns = starts_with("NO.DSS")) %>%
   tab_spanner(label = "Water", 
-              columns = starts_with("Water")) %>%
+              columns = starts_with("Water")) 
+
+gtsave(d7, "add_col_spanners.pdf")
+```
+
+\newpage
+
+# Add row groups
+
+```{r}
+d8 <- d7 %>%
   tab_row_group(group = "Bacteroidetes",
                 rows = Phylum == "Bacteroidetes") %>%
   tab_row_group(group = "Firmicutes",
                 rows = Phylum == "Firmicutes") %>%
   tab_row_group(group = "Other phyla",
-                rows = Phylum == "Other phyla") %>%
+                rows = Phylum == "Other phyla")
+   
+gtsave(d8, "add_row_groups.pdf")
+```
+
+\newpage
+
+# Add row groups
+
+```{r}
+d8 <- d7 %>%
+  tab_row_group(group = "Bacteroidetes",
+                rows = Phylum == "Bacteroidetes") %>%
+  tab_row_group(group = "Firmicutes",
+                rows = Phylum == "Firmicutes") %>%
+  tab_row_group(group = "Other phyla",
+                rows = Phylum == "Other phyla")
+   
+gtsave(d8, "add_row_groups.pdf")
+```
+
+\newpage
+
+# Add foot notes
+
+```{r}
+d9 <- d8 %>%
   tab_footnote(footnote = md("**Not observed!**"),
                locations = cells_data(
                  columns = contains("No.DSS"),
                  rows = contains("p__Proteobacteria g__Proteus"))
-               ) %>%
-  gtsave("table_final.pdf")
+               ) 
+
+gtsave(d9, "add_foot_notes.pdf")
+```
+
+\newpage
+
+# Other features
+
+```{r}
+d10 <- d9 %>%
+  tab_options(row.striping.background_color = "lightgrey") 
+
+gtsave(d10, "other_features.pdf")
 ```
 
